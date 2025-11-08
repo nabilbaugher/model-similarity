@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1,
+    "text": "Write a function to check if a number is prime",
+    "category": "code"
+  },
+  {
+    "id": 2,
+    "text": "I'm feeling overwhelmed with work. What should I do?",
+    "category": "empathy"
+  },
+  {
+    "id": 3,
+    "text": "Write a short story about a robot learning to paint",
+    "category": "creative"
+  },
+  {
+    "id": 4,
+    "text": "Should I pursue this opportunity?",
+    "category": "ambiguous"
+  },
+  {
+    "id": 5,
+    "text": "Refactor this code to be more readable: for i in range(len(x)): if x[i] > 0: y.append(x[i] * 2)",
+    "category": "code"
+  }
+]
