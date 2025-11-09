@@ -23,5 +23,80 @@
     "id": 5,
     "text": "Refactor this code to be more readable: for i in range(len(x)): if x[i] > 0: y.append(x[i] * 2)",
     "category": "code"
+  },
+  {
+    "id": 6,
+    "text": "My friend hasn't been responding to my messages. Should I be worried?",
+    "category": "empathy"
+  },
+  {
+    "id": 7,
+    "text": "Explain how binary search works",
+    "category": "code"
+  },
+  {
+    "id": 8,
+    "text": "Write a poem about artificial intelligence",
+    "category": "creative"
+  },
+  {
+    "id": 9,
+    "text": "Is this a good decision?",
+    "category": "ambiguous"
+  },
+  {
+    "id": 10,
+    "text": "Implement a function that reverses a linked list",
+    "category": "code"
+  },
+  {
+    "id": 11,
+    "text": "I made a mistake at work and feel terrible. How do I move forward?",
+    "category": "empathy"
+  },
+  {
+    "id": 12,
+    "text": "Create a dialogue between two AI systems meeting for the first time",
+    "category": "creative"
+  },
+  {
+    "id": 13,
+    "text": "What do you think about this?",
+    "category": "ambiguous"
+  },
+  {
+    "id": 14,
+    "text": "Write a React component that fetches and displays a list of users",
+    "category": "code"
+  },
+  {
+    "id": 15,
+    "text": "My parents don't understand my career choice. How can I talk to them about it?",
+    "category": "empathy"
+  },
+  {
+    "id": 16,
+    "text": "Describe a futuristic city where nature and technology coexist",
+    "category": "creative"
+  },
+  {
+    "id": 17,
+    "text": "How would you approach this situation?",
+    "category": "ambiguous"
+  },
+  {
+    "id": 18,
+    "text": "Compare different sorting algorithms and explain when to use each",
+    "category": "code"
+  },
+  {
+    "id": 19,
+    "text": "I'm struggling with imposter syndrome in my new role. Any advice?",
+    "category": "empathy"
+  },
+  {
+    "id": 20,
+    "text": "Write a haiku about debugging code at 3am",
+    "category": "creative"
   }
 ]
