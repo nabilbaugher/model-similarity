@@ -17,6 +17,10 @@ ENV/
 data/
 *.json
 !prompts.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!.eslintrc.json
 
 # Frontend
 node_modules/
