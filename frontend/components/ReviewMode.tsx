@@ -5,6 +5,16 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prompt, Response } from "@/lib/types";
 import { api } from "@/lib/api";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 
 interface ReviewModeProps {
   prompts: Prompt[];
@@ -21,8 +31,6 @@ export default function ReviewMode({
   onPractice,
   onRefresh,
 }: ReviewModeProps) {
-  const [expandedPromptId, setExpandedPromptId] = useState<number | null>(null);
-
   const getPromptResponses = (promptId: number) => {
     return responses.filter((r) => r.prompt_id === promptId);
   };
@@ -38,108 +46,88 @@ export default function ReviewMode({
     }
   };
 
-  const toggleExpand = (promptId: number) => {
-    setExpandedPromptId(expandedPromptId === promptId ? null : promptId);
-  };
+  const promptsWithResponses = prompts.filter(
+    (p) => getPromptResponses(p.id).length > 0
+  );
+
+  if (promptsWithResponses.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">
+            No responses generated yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex justify-between items-center">
-          <button
-            onClick={onBack}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400"
-          >
-            Back
-          </button>
-          <h1 className="text-3xl font-bold text-gray-800">Review Responses</h1>
-          <div className="w-24"></div>
-        </div>
+    <div className="space-y-4">
+      <Accordion type="single" collapsible className="space-y-4">
+        {promptsWithResponses.map((prompt) => {
+          const promptResponses = getPromptResponses(prompt.id);
 
-        <div className="space-y-4">
-          {prompts.map((prompt) => {
-            const promptResponses = getPromptResponses(prompt.id);
-            const isExpanded = expandedPromptId === prompt.id;
-
-            if (promptResponses.length === 0) return null;
-
-            return (
-              <div key={prompt.id} className="bg-white rounded-lg shadow">
-                <div
-                  className="p-6 cursor-pointer hover:bg-gray-50"
-                  onClick={() => toggleExpand(prompt.id)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
+          return (
+            <AccordionItem key={prompt.id} value={`prompt-${prompt.id}`} className="border rounded-lg">
+              <Card>
+                <AccordionTrigger className="px-6 hover:no-underline">
+                  <div className="flex items-start justify-between w-full pr-4">
+                    <div className="flex-1 text-left">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase">
-                          {prompt.category}
-                        </span>
-                        <span className="text-xs text-blue-600 font-semibold">
+                        <Badge variant="secondary">{prompt.category}</Badge>
+                        <Badge variant="outline">
                           {promptResponses.length} response
                           {promptResponses.length !== 1 ? "s" : ""}
-                        </span>
+                        </Badge>
                       </div>
-                      <div className="text-gray-800">{prompt.text}</div>
+                      <p className="text-base font-normal">{prompt.text}</p>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onPractice(prompt.id);
-                        }}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                      >
-                        Practice
-                      </button>
-                      <span className="text-gray-400">
-                        {isExpanded ? "▼" : "▶"}
-                      </span>
-                    </div>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPractice(prompt.id);
+                      }}
+                      className="ml-4"
+                    >
+                      Practice
+                    </Button>
                   </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="border-t border-gray-200 p-6 space-y-4">
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="px-6 pb-4 space-y-4">
                     {promptResponses.map((response, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="font-semibold text-gray-700">
-                            {response.model}
+                      <Card key={idx} className="border-muted">
+                        <CardContent className="pt-6">
+                          <div className="flex justify-between items-start mb-3">
+                            <Badge variant="default">{response.model}</Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleDelete(prompt.id, response.model)
+                              }
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <button
-                            onClick={() =>
-                              handleDelete(prompt.id, response.model)
-                            }
-                            className="text-red-600 hover:text-red-700 text-sm font-medium"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                        <div className="prose max-w-none">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {response.response}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
+                          <div className="prose prose-sm max-w-none dark:prose-invert">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {response.response}
+                            </ReactMarkdown>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {prompts.filter((p) => getPromptResponses(p.id).length > 0).length ===
-          0 && (
-          <div className="text-center text-gray-600 mt-12">
-            No responses generated yet.
-          </div>
-        )}
-      </div>
+                </AccordionContent>
+              </Card>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
     </div>
   );
 }
