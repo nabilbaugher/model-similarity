@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Response, MODELS } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface PracticeModeProps {
   responses: Response[];
@@ -57,138 +60,130 @@ export default function PracticeMode({ responses, onBack }: PracticeModeProps) {
 
   if (shuffledResponses.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-gray-600 mb-4">
-            No responses yet. Generate some first!
+      <div className="w-full h-full flex items-center justify-center">
+        <Card className="p-8 max-w-sm">
+          <div className="text-center">
+            <div className="text-slate-600 mb-4">
+              No responses yet. Generate some first!
+            </div>
+            <Button onClick={onBack}>Back to Generate</Button>
           </div>
-          <button
-            onClick={onBack}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-          >
-            Back to Generate
-          </button>
-        </div>
+        </Card>
       </div>
     );
   }
 
+  const accuracy = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="w-full p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex justify-between items-center">
-          <button
-            onClick={onBack}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400"
-          >
+        <div className="mb-8 flex justify-between items-center">
+          <Button onClick={onBack} variant="outline">
             Back
-          </button>
-          <h1 className="text-3xl font-bold text-gray-800">Practice Mode</h1>
-          <div className="text-lg font-semibold text-gray-700">
-            Score: {score.correct}/{score.total} (
-            {score.total > 0
-              ? Math.round((score.correct / score.total) * 100)
-              : 0}
-            %)
+          </Button>
+          <h1 className="text-3xl font-bold text-slate-900">Practice Mode</h1>
+          <div className="text-right">
+            <div className="text-lg font-semibold text-slate-900">
+              {score.correct}/{score.total}
+            </div>
+            <div className="text-sm text-slate-600">{accuracy}% correct</div>
           </div>
         </div>
 
-        <div className="mb-4 text-center text-gray-600">
+        <div className="mb-4 text-center text-slate-600">
           Card {currentIndex + 1} of {shuffledResponses.length}
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-6 min-h-[400px] flex flex-col">
-          <div className="mb-4">
-            <div className="text-sm font-semibold text-gray-500 mb-2">
-              PROMPT
-            </div>
-            <div className="text-gray-700 italic mb-6">
-              {currentResponse.prompt}
-            </div>
-          </div>
-
-          <div className="flex-1">
-            <div className="text-sm font-semibold text-gray-500 mb-2">
-              RESPONSE
-            </div>
-            <div className="prose max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {currentResponse.response}
-              </ReactMarkdown>
-            </div>
-          </div>
-
-          {isFlipped && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <div className="text-sm font-semibold text-blue-900 mb-1">
-                ACTUAL MODEL
+        <Card className="mb-8">
+          <CardContent className="pt-8">
+            <div className="mb-6">
+              <div className="text-sm font-semibold text-slate-500 uppercase mb-2">
+                Prompt
               </div>
-              <div className="text-lg font-bold text-blue-700">
-                {currentResponse.model}
-              </div>
-              <div
-                className={`mt-2 font-semibold ${
-                  guess === currentResponse.model
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {guess === currentResponse.model
-                  ? "Correct!"
-                  : `Wrong - you guessed ${guess}`}
+              <div className="text-slate-700 italic mb-6">
+                {currentResponse.prompt}
               </div>
             </div>
-          )}
-        </div>
 
-        {!isFlipped && (
-          <div className="mb-6">
-            <div className="text-sm font-semibold text-gray-700 mb-3">
-              Which model generated this?
+            <div className="mb-6">
+              <div className="text-sm font-semibold text-slate-500 uppercase mb-2">
+                Response
+              </div>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {currentResponse.response}
+                </ReactMarkdown>
+              </div>
             </div>
-            <div className="flex gap-3">
-              {MODELS.map((model) => (
-                <button
-                  key={model}
-                  onClick={() => setGuess(model)}
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                    guess === model
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+
+            {isFlipped && (
+              <div className="mt-8 p-6 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="text-sm font-semibold text-slate-700 mb-2">
+                  ACTUAL MODEL
+                </div>
+                <div className="text-2xl font-bold text-slate-900 mb-3">
+                  {currentResponse.model}
+                </div>
+                <div
+                  className={`font-semibold text-lg ${
+                    guess === currentResponse.model
+                      ? "text-green-600"
+                      : "text-red-600"
                   }`}
                 >
+                  {guess === currentResponse.model
+                    ? "✓ Correct!"
+                    : `✗ Wrong - you guessed ${guess}`}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {!isFlipped && (
+          <div className="mb-8">
+            <div className="text-sm font-semibold text-slate-700 mb-4">
+              Which model generated this?
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {MODELS.map((model) => (
+                <Button
+                  key={model}
+                  onClick={() => setGuess(model)}
+                  variant={guess === model ? "default" : "outline"}
+                  size="lg"
+                >
                   {model.split("/")[1]}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
         )}
 
-        <div className="flex justify-between">
-          <button
+        <div className="flex justify-between gap-4">
+          <Button
             onClick={handlePrevious}
             disabled={currentIndex === 0}
-            className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-400"
+            variant="outline"
           >
             Previous
-          </button>
+          </Button>
 
           {!isFlipped ? (
-            <button
+            <Button
               onClick={handleFlip}
               disabled={!guess}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
             >
               Reveal Answer
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={handleNext}
               disabled={currentIndex === shuffledResponses.length - 1}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
             >
               Next
-            </button>
+            </Button>
           )}
         </div>
       </div>

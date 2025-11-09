@@ -5,6 +5,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prompt, Response } from "@/lib/types";
 import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface ReviewModeProps {
   prompts: Prompt[];
@@ -42,103 +45,102 @@ export default function ReviewMode({
     setExpandedPromptId(expandedPromptId === promptId ? null : promptId);
   };
 
+  const promptsWithResponses = prompts.filter((p) => getPromptResponses(p.id).length > 0);
+
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex justify-between items-center">
-          <button
-            onClick={onBack}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400"
-          >
+    <div className="w-full p-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8 flex justify-between items-center">
+          <Button onClick={onBack} variant="outline">
             Back
-          </button>
-          <h1 className="text-3xl font-bold text-gray-800">Review Responses</h1>
+          </Button>
+          <h1 className="text-3xl font-bold text-slate-900">Review Responses</h1>
           <div className="w-24"></div>
         </div>
 
         <div className="space-y-4">
-          {prompts.map((prompt) => {
-            const promptResponses = getPromptResponses(prompt.id);
-            const isExpanded = expandedPromptId === prompt.id;
-
-            if (promptResponses.length === 0) return null;
-
-            return (
-              <div key={prompt.id} className="bg-white rounded-lg shadow">
-                <div
-                  className="p-6 cursor-pointer hover:bg-gray-50"
-                  onClick={() => toggleExpand(prompt.id)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase">
-                          {prompt.category}
-                        </span>
-                        <span className="text-xs text-blue-600 font-semibold">
-                          {promptResponses.length} response
-                          {promptResponses.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="text-gray-800">{prompt.text}</div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onPractice(prompt.id);
-                        }}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                      >
-                        Practice
-                      </button>
-                      <span className="text-gray-400">
-                        {isExpanded ? "▼" : "▶"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="border-t border-gray-200 p-6 space-y-4">
-                    {promptResponses.map((response, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="font-semibold text-gray-700">
-                            {response.model}
-                          </div>
-                          <button
-                            onClick={() =>
-                              handleDelete(prompt.id, response.model)
-                            }
-                            className="text-red-600 hover:text-red-700 text-sm font-medium"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                        <div className="prose max-w-none">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {response.response}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {promptsWithResponses.length === 0 ? (
+            <Card className="p-8">
+              <div className="text-center text-slate-600">
+                No responses generated yet.
               </div>
-            );
-          })}
-        </div>
+            </Card>
+          ) : (
+            promptsWithResponses.map((prompt) => {
+              const promptResponses = getPromptResponses(prompt.id);
+              const isExpanded = expandedPromptId === prompt.id;
 
-        {prompts.filter((p) => getPromptResponses(p.id).length > 0).length ===
-          0 && (
-          <div className="text-center text-gray-600 mt-12">
-            No responses generated yet.
-          </div>
-        )}
+              return (
+                <Card key={prompt.id} className="overflow-hidden">
+                  <div
+                    className="p-6 cursor-pointer hover:bg-slate-50 transition-colors"
+                    onClick={() => toggleExpand(prompt.id)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Badge variant="secondary">{prompt.category}</Badge>
+                          <Badge variant="outline">
+                            {promptResponses.length} response{promptResponses.length !== 1 ? "s" : ""}
+                          </Badge>
+                        </div>
+                        <p className="text-slate-900 font-medium">{prompt.text}</p>
+                      </div>
+                      <div className="flex items-center gap-3 ml-4">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPractice(prompt.id);
+                          }}
+                          size="sm"
+                        >
+                          Practice
+                        </Button>
+                        <span className="text-slate-400 text-xl">
+                          {isExpanded ? "▼" : "▶"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="border-t border-slate-200 bg-slate-50">
+                      <div className="p-6 space-y-4">
+                        {promptResponses.map((response, idx) => (
+                          <Card key={idx} className="border-slate-300">
+                            <CardHeader className="pb-3">
+                              <div className="flex justify-between items-center">
+                                <h4 className="font-semibold text-slate-900">
+                                  {response.model}
+                                </h4>
+                                <Button
+                                  onClick={() =>
+                                    handleDelete(prompt.id, response.model)
+                                  }
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="prose prose-sm max-w-none dark:prose-invert">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {response.response}
+                                </ReactMarkdown>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );

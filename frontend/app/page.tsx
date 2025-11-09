@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { Prompt, Response, MODELS, View } from "@/lib/types";
 import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import PracticeMode from "@/components/PracticeMode";
 import ReviewMode from "@/components/ReviewMode";
 
@@ -11,9 +15,7 @@ export default function Home() {
   const [selectedPromptId, setSelectedPromptId] = useState<number | null>(null);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
-  const [selectedModels, setSelectedModels] = useState<
-    Record<number, string[]>
-  >({});
+  const [selectedModels, setSelectedModels] = useState<Record<number, string[]>>({});
   const [generating, setGenerating] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
@@ -74,105 +76,148 @@ export default function Home() {
     setView("practice");
   };
 
+  const getTotalResponses = () => responses.length;
+
   if (view === "generate") {
     return (
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6 flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-800">
-              Generate Responses
-            </h1>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setView("review")}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
-              >
-                Review
-              </button>
-              <button
-                onClick={() => startPractice(null)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-              >
-                Practice All
-              </button>
+      <div className="flex h-screen bg-slate-50">
+        {/* Sidebar */}
+        <Sidebar>
+          <SidebarHeader>
+            <h1 className="text-xl font-bold text-slate-900">Model Similarity</h1>
+            <p className="text-xs text-slate-500">Test & Practice</p>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={true} onClick={() => setView("generate" as View)}>
+                  <span>Generate Responses</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={false} onClick={() => setView("review" as View)}>
+                  <span>Review ({getTotalResponses()})</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={false} onClick={() => startPractice(null)}>
+                  <span>Practice Mode</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-5xl mx-auto p-8">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-slate-900">Generate Responses</h2>
+              <p className="text-slate-600 mt-2">Select models and generate responses from prompts</p>
+            </div>
+
+            <div className="space-y-4">
+              {prompts.map((prompt) => (
+                <Card key={prompt.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="secondary">{prompt.category}</Badge>
+                          <Badge variant="outline">{getResponseCount(prompt.id)} responses</Badge>
+                        </div>
+                        <CardTitle className="text-xl">{prompt.text}</CardTitle>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700 block mb-3">Select models:</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {MODELS.map((model) => {
+                            const hasResponse = responses.some(
+                              (r) => r.prompt_id === prompt.id && r.model === model
+                            );
+                            const isSelected = (selectedModels[prompt.id] || []).includes(model);
+                            return (
+                              <Button
+                                key={model}
+                                onClick={() => toggleModel(prompt.id, model)}
+                                variant={
+                                  isSelected
+                                    ? "default"
+                                    : hasResponse
+                                    ? "outline"
+                                    : "secondary"
+                                }
+                                size="sm"
+                              >
+                                {model.split("/")[1]} {hasResponse && "✓"}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => handleGenerate(prompt.id)}
+                        disabled={
+                          !selectedModels[prompt.id]?.length ||
+                          generating[prompt.id]
+                        }
+                      >
+                        {generating[prompt.id] ? "Generating..." : "Generate"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
-
-          <div className="space-y-4">
-            {prompts.map((prompt) => (
-              <div key={prompt.id} className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-semibold text-gray-500 uppercase">
-                        {prompt.category}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        ({getResponseCount(prompt.id)} responses)
-                      </span>
-                    </div>
-                    <div className="text-gray-800">{prompt.text}</div>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <div className="text-sm font-semibold text-gray-700 mb-2">
-                    Select models:
-                  </div>
-                  <div className="flex gap-2 flex-wrap mb-3">
-                    {MODELS.map((model) => {
-                      const hasResponse = responses.some(
-                        (r) => r.prompt_id === prompt.id && r.model === model
-                      );
-                      const isSelected = (
-                        selectedModels[prompt.id] || []
-                      ).includes(model);
-                      return (
-                        <button
-                          key={model}
-                          onClick={() => toggleModel(prompt.id, model)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            isSelected
-                              ? "bg-blue-600 text-white"
-                              : hasResponse
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
-                        >
-                          {model.split("/")[1]} {hasResponse && "✓"}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => handleGenerate(prompt.id)}
-                    disabled={
-                      !selectedModels[prompt.id]?.length ||
-                      generating[prompt.id]
-                    }
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
-                  >
-                    {generating[prompt.id] ? "Generating..." : "Generate"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        </main>
       </div>
     );
   }
 
   if (view === "review") {
     return (
-      <ReviewMode
-        prompts={prompts}
-        responses={responses}
-        onBack={() => setView("generate")}
-        onPractice={startPractice}
-        onRefresh={loadResponses}
-      />
+      <div className="flex h-screen bg-slate-50">
+        <Sidebar>
+          <SidebarHeader>
+            <h1 className="text-xl font-bold text-slate-900">Model Similarity</h1>
+            <p className="text-xs text-slate-500">Test & Practice</p>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={false} onClick={() => setView("generate" as View)}>
+                  <span>Generate Responses</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={true} onClick={() => setView("review" as View)}>
+                  <span>Review ({getTotalResponses()})</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive={false} onClick={() => startPractice(null)}>
+                  <span>Practice Mode</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+        <div className="flex-1 overflow-auto">
+          <ReviewMode
+            prompts={prompts}
+            responses={responses}
+            onBack={() => setView("generate")}
+            onPractice={startPractice}
+            onRefresh={loadResponses}
+          />
+        </div>
+      </div>
     );
   }
 
@@ -181,9 +226,38 @@ export default function Home() {
     : responses;
 
   return (
-    <PracticeMode
-      responses={filteredResponses}
-      onBack={() => setView("generate")}
-    />
+    <div className="flex h-screen bg-slate-50">
+      <Sidebar>
+        <SidebarHeader>
+          <h1 className="text-xl font-bold text-slate-900">Model Similarity</h1>
+          <p className="text-xs text-slate-500">Test & Practice</p>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={false} onClick={() => setView("generate" as View)}>
+                <span>Generate Responses</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={false} onClick={() => setView("review" as View)}>
+                <span>Review ({getTotalResponses()})</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={true} onClick={() => startPractice(null)}>
+                <span>Practice Mode</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+      <div className="flex-1 overflow-auto">
+        <PracticeMode
+          responses={filteredResponses}
+          onBack={() => setView("generate" as View)}
+        />
+      </div>
+    </div>
   );
 }
