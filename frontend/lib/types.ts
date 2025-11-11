@@ -11,11 +11,30 @@ export interface Response {
   response: string;
 }
 
-export const MODELS = [
-  "anthropic/claude-sonnet-4.5",
-  "openai/gpt-5",
-  "google/gemini-2.5-pro",
-  "anthropic/claude-haiku-4.5",
-];
+export type View = "generate" | "review" | "practice" | "batch" | "visualize" | "design";
 
-export type View = "generate" | "review" | "practice";
+export interface BatchJobStatus {
+  promptId: number;
+  model: string;
+  status: "queued" | "running" | "completed" | "failed";
+  error?: string;
+}
+
+export interface EmbeddingPoint {
+  x: number;
+  y: number;
+  model: string;
+  provider: string;
+  prompt_id: number;
+  prompt: string;
+  response_preview: string;
+  category: string;
+}
+
+export interface EmbeddingMetadata {
+  models: string[];
+  categories: string[];
+  model_counts: Record<string, number>;
+  category_counts: Record<string, number>;
+  total_responses: number;
+}

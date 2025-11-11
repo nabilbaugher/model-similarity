@@ -3,8 +3,15 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Prompt, Response } from "@/lib/types";
+import { Prompt, Response, View } from "@/lib/types";
 import { api } from "@/lib/api";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface ReviewModeProps {
   prompts: Prompt[];
@@ -12,14 +19,17 @@ interface ReviewModeProps {
   onBack: () => void;
   onPractice: (promptId: number) => void;
   onRefresh: () => void;
+  currentView: View;
+  onNavigate: (view: View) => void;
 }
 
 export default function ReviewMode({
   prompts,
   responses,
-  onBack,
   onPractice,
   onRefresh,
+  currentView,
+  onNavigate,
 }: ReviewModeProps) {
   const [expandedPromptId, setExpandedPromptId] = useState<number | null>(null);
 
@@ -43,20 +53,15 @@ export default function ReviewMode({
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex justify-between items-center">
-          <button
-            onClick={onBack}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400"
-          >
-            Back
-          </button>
-          <h1 className="text-3xl font-bold text-gray-800">Review Responses</h1>
-          <div className="w-24"></div>
-        </div>
-
-        <div className="space-y-4">
+    <>
+      <AppSidebar currentView={currentView} onNavigate={onNavigate} />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <h1 className="text-xl font-semibold">Review Responses</h1>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4">
           {prompts.map((prompt) => {
             const promptResponses = getPromptResponses(prompt.id);
             const isExpanded = expandedPromptId === prompt.id;
@@ -64,82 +69,86 @@ export default function ReviewMode({
             if (promptResponses.length === 0) return null;
 
             return (
-              <div key={prompt.id} className="bg-white rounded-lg shadow">
-                <div
-                  className="p-6 cursor-pointer hover:bg-gray-50"
+              <Card key={prompt.id}>
+                <CardHeader
+                  className="cursor-pointer hover:bg-accent/50 transition-colors"
                   onClick={() => toggleExpand(prompt.id)}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase">
-                          {prompt.category}
-                        </span>
-                        <span className="text-xs text-blue-600 font-semibold">
+                        <Badge variant="secondary">{prompt.category}</Badge>
+                        <Badge variant="outline">
                           {promptResponses.length} response
                           {promptResponses.length !== 1 ? "s" : ""}
-                        </span>
+                        </Badge>
                       </div>
-                      <div className="text-gray-800">{prompt.text}</div>
+                      <CardTitle className="text-base font-normal">
+                        {prompt.text}
+                      </CardTitle>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      <button
+                      <Button
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           onPractice(prompt.id);
                         }}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                       >
                         Practice
-                      </button>
-                      <span className="text-gray-400">
-                        {isExpanded ? "▼" : "▶"}
-                      </span>
+                      </Button>
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
                     </div>
                   </div>
-                </div>
+                </CardHeader>
 
                 {isExpanded && (
-                  <div className="border-t border-gray-200 p-6 space-y-4">
+                  <CardContent className="space-y-4 pt-4">
                     {promptResponses.map((response, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="font-semibold text-gray-700">
-                            {response.model}
+                      <Card key={idx} className="border-muted">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <Badge>{response.model}</Badge>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                handleDelete(prompt.id, response.model)
+                              }
+                            >
+                              Delete
+                            </Button>
                           </div>
-                          <button
-                            onClick={() =>
-                              handleDelete(prompt.id, response.model)
-                            }
-                            className="text-red-600 hover:text-red-700 text-sm font-medium"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                        <div className="prose max-w-none">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {response.response}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="prose prose-sm max-w-none dark:prose-invert">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {response.response}
+                            </ReactMarkdown>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </div>
+                  </CardContent>
                 )}
-              </div>
+              </Card>
             );
           })}
-        </div>
 
-        {prompts.filter((p) => getPromptResponses(p.id).length > 0).length ===
-          0 && (
-          <div className="text-center text-gray-600 mt-12">
-            No responses generated yet.
-          </div>
-        )}
-      </div>
-    </div>
+          {prompts.filter((p) => getPromptResponses(p.id).length > 0).length ===
+            0 && (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-muted-foreground">
+                No responses generated yet.
+              </p>
+            </div>
+          )}
+        </div>
+      </SidebarInset>
+    </>
   );
 }

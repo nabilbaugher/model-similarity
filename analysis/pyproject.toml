@@ -1,0 +1,19 @@
+[project]
+name = "model-similarity-analysis"
+version = "0.1.0"
+description = "Analysis tools for comparing model response embeddings"
+requires-python = ">=3.10"
+dependencies = [
+    "sentence-transformers>=2.2.0",
+    "umap-learn>=0.5.0",
+    "plotly>=5.0.0",
+    "pandas>=1.5.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+]

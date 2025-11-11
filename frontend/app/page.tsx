@@ -1,25 +1,45 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Prompt, Response, MODELS, View } from "@/lib/types";
+import { Prompt, Response, View } from "@/lib/types";
 import { api } from "@/lib/api";
 import PracticeMode from "@/components/PracticeMode";
 import ReviewMode from "@/components/ReviewMode";
+import BatchRunner from "@/components/BatchRunner";
+import EmbeddingVisualization from "@/components/EmbeddingVisualization";
+import { DesignInspiration } from "@/components/DesignInspiration";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const [view, setView] = useState<View>("generate");
   const [selectedPromptId, setSelectedPromptId] = useState<number | null>(null);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
+  const [models, setModels] = useState<string[]>([]);
   const [selectedModels, setSelectedModels] = useState<
     Record<number, string[]>
   >({});
   const [generating, setGenerating] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
+    loadConfig();
     loadPrompts();
     loadResponses();
   }, []);
+
+  const loadConfig = async () => {
+    try {
+      const data = await api.getConfig();
+      setModels(data.models);
+    } catch (err) {
+      console.error("Failed to load config:", err);
+    }
+  };
 
   const loadPrompts = async () => {
     try {
@@ -76,91 +96,112 @@ export default function Home() {
 
   if (view === "generate") {
     return (
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6 flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-800">
-              Generate Responses
-            </h1>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setView("review")}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
-              >
-                Review
-              </button>
-              <button
-                onClick={() => startPractice(null)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-              >
-                Practice All
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-4">
+      <>
+        <AppSidebar currentView={view} onNavigate={setView} />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <h1 className="text-xl font-semibold">Generate Responses</h1>
+          </header>
+          <div className="flex flex-1 flex-col gap-4 p-4">
             {prompts.map((prompt) => (
-              <div key={prompt.id} className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-semibold text-gray-500 uppercase">
-                        {prompt.category}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        ({getResponseCount(prompt.id)} responses)
-                      </span>
+              <Card key={prompt.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{prompt.category}</Badge>
+                      <Badge variant="outline">
+                        {getResponseCount(prompt.id)} responses
+                      </Badge>
                     </div>
-                    <div className="text-gray-800">{prompt.text}</div>
                   </div>
-                </div>
+                  <CardTitle className="text-base font-normal mt-2">
+                    {prompt.text}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <CardDescription className="mb-2">
+                        Select models:
+                      </CardDescription>
+                      <div className="flex gap-2 flex-wrap">
+                        {models.map((model) => {
+                          const hasResponse = responses.some(
+                            (r) => r.prompt_id === prompt.id && r.model === model
+                          );
+                          const isSelected = (
+                            selectedModels[prompt.id] || []
+                          ).includes(model);
+                          return (
+                            <Button
+                              key={model}
+                              variant={isSelected ? "default" : hasResponse ? "secondary" : "outline"}
+                              size="sm"
+                              onClick={() => toggleModel(prompt.id, model)}
+                            >
+                              {model.split("/")[1]} {hasResponse && "✓"}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                <div className="mt-4">
-                  <div className="text-sm font-semibold text-gray-700 mb-2">
-                    Select models:
+                    <Button
+                      onClick={() => handleGenerate(prompt.id)}
+                      disabled={
+                        !selectedModels[prompt.id]?.length ||
+                        generating[prompt.id]
+                      }
+                    >
+                      {generating[prompt.id] ? "Generating..." : "Generate"}
+                    </Button>
                   </div>
-                  <div className="flex gap-2 flex-wrap mb-3">
-                    {MODELS.map((model) => {
-                      const hasResponse = responses.some(
-                        (r) => r.prompt_id === prompt.id && r.model === model
-                      );
-                      const isSelected = (
-                        selectedModels[prompt.id] || []
-                      ).includes(model);
-                      return (
-                        <button
-                          key={model}
-                          onClick={() => toggleModel(prompt.id, model)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            isSelected
-                              ? "bg-blue-600 text-white"
-                              : hasResponse
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
-                        >
-                          {model.split("/")[1]} {hasResponse && "✓"}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => handleGenerate(prompt.id)}
-                    disabled={
-                      !selectedModels[prompt.id]?.length ||
-                      generating[prompt.id]
-                    }
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
-                  >
-                    {generating[prompt.id] ? "Generating..." : "Generate"}
-                  </button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </div>
-      </div>
+        </SidebarInset>
+      </>
+    );
+  }
+
+  if (view === "batch") {
+    return (
+      <BatchRunner
+        prompts={prompts}
+        responses={responses}
+        models={models}
+        currentView={view}
+        onNavigate={setView}
+        onRefresh={loadResponses}
+      />
+    );
+  }
+
+  if (view === "visualize") {
+    return (
+      <EmbeddingVisualization
+        currentView={view}
+        onNavigate={setView}
+      />
+    );
+  }
+
+  if (view === "design") {
+    return (
+      <>
+        <AppSidebar currentView={view} onNavigate={setView} />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <h1 className="text-xl font-semibold">Design Inspiration</h1>
+          </header>
+          <DesignInspiration />
+        </SidebarInset>
+      </>
     );
   }
 
@@ -172,6 +213,8 @@ export default function Home() {
         onBack={() => setView("generate")}
         onPractice={startPractice}
         onRefresh={loadResponses}
+        currentView={view}
+        onNavigate={setView}
       />
     );
   }
@@ -183,7 +226,10 @@ export default function Home() {
   return (
     <PracticeMode
       responses={filteredResponses}
+      models={models}
       onBack={() => setView("generate")}
+      currentView={view}
+      onNavigate={setView}
     />
   );
 }
